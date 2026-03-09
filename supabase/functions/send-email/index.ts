@@ -14,22 +14,22 @@ serve(async (req) => {
     const { type, customer_email, customer_name, service_name, booking_date, booking_time, price } = await req.json();
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
-    const adminEmail = Deno.env.get("ADMIN_EMAIL") || "hello@zehra-glam.com";
+    const adminEmail = Deno.env.get("ADMIN_EMAIL") || "admin@zehra-glam.com";
 
     if (!resendKey) {
       console.log("RESEND_API_KEY not set — skipping email send");
-      console.log("Would send:", { type, customer_email, customer_name, service_name, booking_date, booking_time });
       return new Response(JSON.stringify({ sent: false, reason: "no_api_key" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const fromAddress = "Zehra Glam <onboarding@resend.dev>";
+
     const emails: { from: string; to: string; subject: string; html: string }[] = [];
 
     if (type === "booking_confirmation") {
-      // Customer confirmation email
       emails.push({
-        from: "Zehra Glam <bookings@zehra-glam.com>",
+        from: fromAddress,
         to: customer_email,
         subject: `Booking Confirmed — ${service_name}`,
         html: `
@@ -50,9 +50,8 @@ serve(async (req) => {
         `,
       });
 
-      // Admin notification email
       emails.push({
-        from: "Zehra Glam <bookings@zehra-glam.com>",
+        from: fromAddress,
         to: adminEmail,
         subject: `New Booking: ${customer_name} — ${service_name}`,
         html: `
@@ -72,16 +71,21 @@ serve(async (req) => {
     }
 
     const results = await Promise.all(
-      emails.map((email) =>
-        fetch("https://api.resend.com/emails", {
+      emails.map(async (email) => {
+        const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${resendKey}`,
           },
           body: JSON.stringify(email),
-        })
-      )
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`Resend error (${res.status}) for ${email.to}:`, errText);
+        }
+        return res;
+      })
     );
 
     const allOk = results.every((r) => r.ok);
@@ -91,6 +95,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("send-email error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

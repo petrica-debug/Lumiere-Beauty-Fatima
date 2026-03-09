@@ -84,10 +84,23 @@ export default function Booking() {
         customer_phone: phone,
         status: "pending",
         stripe_payment_status: "unpaid",
-        notes: "Stripe not configured - direct booking",
+        notes: "Direct booking (fallback)",
       });
 
       if (!insertError) {
+        try {
+          await supabase.functions.invoke("send-email", {
+            body: {
+              type: "booking_confirmation",
+              customer_email: email,
+              customer_name: name,
+              service_name: getServiceName(selectedService),
+              booking_date: bookingDate,
+              booking_time: selectedTime,
+              price: selectedService.price,
+            },
+          });
+        } catch { /* email is best-effort */ }
         window.location.href = "/booking/success";
       }
     } finally {

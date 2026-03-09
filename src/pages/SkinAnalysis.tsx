@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, type DragEvent } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/i18n/LanguageContext";
 import { supabase } from "@/lib/supabase";
-import { Upload, Camera, ArrowLeft, Sparkles, AlertCircle } from "lucide-react";
+import { Upload, Camera, ArrowLeft, Sparkles, AlertCircle, Loader2 } from "lucide-react";
 
 interface AnalysisResult {
   skin_type: string;
@@ -15,10 +15,12 @@ interface AnalysisResult {
 const MAX_DIMENSION = 1024;
 const JPEG_QUALITY = 0.7;
 
-function resizeImage(dataUrl: string): Promise<string> {
+function resizeImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
+      URL.revokeObjectURL(url);
       let { width, height } = img;
       if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
         const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
@@ -33,45 +35,71 @@ function resizeImage(dataUrl: string): Promise<string> {
       ctx.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
     };
-    img.onerror = () => reject(new Error("Failed to load image"));
-    img.src = dataUrl;
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = url;
   });
 }
 
 export default function SkinAnalysis() {
   const { t } = useTranslation();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputId = "skin-photo-input";
   const [preview, setPreview] = useState<string | null>(null);
   const [compressedBase64, setCompressedBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
+      setError("Please select an image file (JPEG, PNG, or WebP).");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setError("Image is too large. Please use a photo under 20 MB.");
       return;
     }
 
-    try {
-      const reader = new FileReader();
-      const rawDataUrl = await new Promise<string>((resolve, reject) => {
-        reader.onload = (ev) => resolve(ev.target?.result as string);
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(file);
-      });
+    setProcessing(true);
+    setError("");
 
-      const resized = await resizeImage(rawDataUrl);
+    try {
+      const resized = await resizeImage(file);
       setPreview(resized);
       setCompressedBase64(resized.split(",")[1]);
       setResult(null);
-      setError("");
     } catch {
       setError("Failed to process image. Please try another photo.");
+    } finally {
+      setProcessing(false);
     }
+  }, []);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  }, [processFile]);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  }, [processFile]);
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    setDragOver(false);
   }, []);
 
   const analyze = async () => {
@@ -99,7 +127,7 @@ export default function SkinAnalysis() {
     setCompressedBase64(null);
     setResult(null);
     setError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (formRef.current) formRef.current.reset();
   };
 
   const scoreColor = (score: number) => {
@@ -126,29 +154,41 @@ export default function SkinAnalysis() {
 
         {!result ? (
           <div className="max-w-lg mx-auto">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
             {!preview ? (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full aspect-square max-h-96 border-2 border-dashed border-border rounded-sm flex flex-col items-center justify-center gap-4 hover:border-accent/50 transition-colors"
-              >
-                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Camera className="w-8 h-8 text-accent" />
-                </div>
-                <div className="text-center">
-                  <p className="font-body text-sm text-foreground mb-1">{t("skin.upload")}</p>
-                  <p className="font-body text-xs text-muted-foreground flex items-center gap-1 justify-center">
-                    <Upload className="w-3 h-3" /> Click or tap to upload
-                  </p>
-                </div>
-              </button>
+              <form ref={formRef}>
+                <label
+                  htmlFor={inputId}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  className={`block w-full aspect-square max-h-96 border-2 border-dashed rounded-sm cursor-pointer
+                    flex flex-col items-center justify-center gap-4 transition-colors
+                    ${dragOver ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"}`}
+                >
+                  <input
+                    id={inputId}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="sr-only"
+                  />
+                  {processing ? (
+                    <Loader2 className="w-10 h-10 text-accent animate-spin" />
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+                        <Camera className="w-8 h-8 text-accent" />
+                      </div>
+                      <div className="text-center px-4">
+                        <p className="font-body text-sm text-foreground mb-1">{t("skin.upload")}</p>
+                        <p className="font-body text-xs text-muted-foreground flex items-center gap-1 justify-center">
+                          <Upload className="w-3 h-3" /> Click to browse or drag & drop
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </label>
+              </form>
             ) : (
               <div className="space-y-4">
                 <div className="aspect-square max-h-96 overflow-hidden rounded-sm border border-border mx-auto">
@@ -164,8 +204,9 @@ export default function SkinAnalysis() {
                   <button
                     onClick={analyze}
                     disabled={loading}
-                    className="flex-1 py-3 bg-accent text-accent-foreground font-body text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+                    className="flex-1 py-3 bg-accent text-accent-foreground font-body text-sm hover:bg-accent/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                     {loading ? t("skin.analyzing") : t("skin.analyze")}
                   </button>
                 </div>
