@@ -27,6 +27,15 @@ serve(async (req) => {
 
     const emails: { from: string; to: string; subject: string; html: string }[] = [];
 
+    const bookingDetailsHtml = `
+      <div style="background: #faf8f5; padding: 24px; margin: 24px 0; border-left: 3px solid #c8956c;">
+        <p style="margin: 8px 0; color: #2d1f14;"><strong>Service:</strong> ${service_name}</p>
+        <p style="margin: 8px 0; color: #2d1f14;"><strong>Date:</strong> ${booking_date}</p>
+        <p style="margin: 8px 0; color: #2d1f14;"><strong>Time:</strong> ${booking_time}</p>
+        <p style="margin: 8px 0; color: #2d1f14;"><strong>Price:</strong> €${price}</p>
+      </div>
+    `;
+
     if (type === "booking_confirmation") {
       emails.push({
         from: fromAddress,
@@ -37,12 +46,7 @@ serve(async (req) => {
             <h1 style="font-size: 28px; font-weight: 300; color: #2d1f14; margin-bottom: 24px;">Booking Confirmed</h1>
             <p style="color: #6b5c50; line-height: 1.6;">Dear ${customer_name},</p>
             <p style="color: #6b5c50; line-height: 1.6;">Your appointment has been confirmed. Here are the details:</p>
-            <div style="background: #faf8f5; padding: 24px; margin: 24px 0; border-left: 3px solid #c8956c;">
-              <p style="margin: 8px 0; color: #2d1f14;"><strong>Service:</strong> ${service_name}</p>
-              <p style="margin: 8px 0; color: #2d1f14;"><strong>Date:</strong> ${booking_date}</p>
-              <p style="margin: 8px 0; color: #2d1f14;"><strong>Time:</strong> ${booking_time}</p>
-              <p style="margin: 8px 0; color: #2d1f14;"><strong>Price:</strong> €${price}</p>
-            </div>
+            ${bookingDetailsHtml}
             <p style="color: #6b5c50; line-height: 1.6;"><strong>Location:</strong> Rue d'Arlon 25, Ixelles</p>
             <p style="color: #6b5c50; line-height: 1.6;">We look forward to seeing you!</p>
             <p style="color: #c8956c; margin-top: 32px;">— Zehra Glam Team</p>
@@ -64,6 +68,19 @@ serve(async (req) => {
               <p style="margin: 8px 0; color: #2d1f14;"><strong>Date:</strong> ${booking_date}</p>
               <p style="margin: 8px 0; color: #2d1f14;"><strong>Time:</strong> ${booking_time}</p>
               <p style="margin: 8px 0; color: #2d1f14;"><strong>Price:</strong> €${price}</p>
+            </div>
+            <p style="color: #6b5c50; line-height: 1.6; margin-top: 16px;">
+              <em>Note: Please forward the confirmation below to the customer at <strong>${customer_email}</strong> if they did not receive it directly.</em>
+            </p>
+            <hr style="border: none; border-top: 1px solid #e5ddd5; margin: 24px 0;" />
+            <p style="color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Customer confirmation copy:</p>
+            <div style="border: 1px solid #e5ddd5; padding: 24px; margin-top: 12px;">
+              <h2 style="font-size: 22px; font-weight: 300; color: #2d1f14; margin-bottom: 16px;">Booking Confirmed</h2>
+              <p style="color: #6b5c50; line-height: 1.6;">Dear ${customer_name},</p>
+              <p style="color: #6b5c50; line-height: 1.6;">Your appointment has been confirmed:</p>
+              ${bookingDetailsHtml}
+              <p style="color: #6b5c50; line-height: 1.6;"><strong>Location:</strong> Rue d'Arlon 25, Ixelles</p>
+              <p style="color: #c8956c; margin-top: 16px;">— Zehra Glam Team</p>
             </div>
           </div>
         `,
