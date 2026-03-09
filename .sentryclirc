@@ -1,0 +1,7 @@
+[defaults]
+org=redi-international
+project=lumiere-beauty-fatima
+
+[auth]
+# Add your Sentry auth token with project:write scope
+# token=your-token-here
