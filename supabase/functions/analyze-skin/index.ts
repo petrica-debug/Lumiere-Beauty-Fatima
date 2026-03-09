@@ -71,6 +71,11 @@ Return ONLY valid JSON, no markdown.`,
       }),
     });
 
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`OpenAI API error (${response.status}): ${errBody}`);
+    }
+
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
 
@@ -78,7 +83,8 @@ Return ONLY valid JSON, no markdown.`,
       throw new Error("No analysis returned from AI");
     }
 
-    const result = JSON.parse(content);
+    const cleaned = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    const result = JSON.parse(cleaned);
 
     return new Response(
       JSON.stringify(result),

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/i18n/LanguageContext";
 import { supabase } from "@/lib/supabase";
@@ -12,39 +12,80 @@ interface AnalysisResult {
   recommended_services: string[];
 }
 
+const MAX_DIMENSION = 1024;
+const JPEG_QUALITY = 0.7;
+
+function resizeImage(dataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not supported"));
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+    };
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = dataUrl;
+  });
+}
+
 export default function SkinAnalysis() {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [compressedBase64, setCompressedBase64] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setPreview(ev.target?.result as string);
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      const rawDataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+
+      const resized = await resizeImage(rawDataUrl);
+      setPreview(resized);
+      setCompressedBase64(resized.split(",")[1]);
       setResult(null);
       setError("");
-    };
-    reader.readAsDataURL(file);
-  };
+    } catch {
+      setError("Failed to process image. Please try another photo.");
+    }
+  }, []);
 
   const analyze = async () => {
-    if (!preview) return;
+    if (!compressedBase64) return;
     setLoading(true);
     setError("");
 
     try {
-      const base64 = preview.split(",")[1];
       const { data, error: fnError } = await supabase.functions.invoke("analyze-skin", {
-        body: { image_base64: base64 },
+        body: { image_base64: compressedBase64 },
       });
 
       if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
       setResult(data);
     } catch (err: any) {
       setError(err.message || "Analysis failed. Please try again.");
@@ -55,6 +96,7 @@ export default function SkinAnalysis() {
 
   const reset = () => {
     setPreview(null);
+    setCompressedBase64(null);
     setResult(null);
     setError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -87,8 +129,7 @@ export default function SkinAnalysis() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
-              capture="user"
+              accept="image/jpeg,image/png,image/webp,image/heic"
               onChange={handleFileSelect}
               className="hidden"
             />
