@@ -16,7 +16,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.testimonials": "Testimonials",
     "nav.contact": "Contact",
     "nav.booking": "Book Now",
-    "nav.skinAnalysis": "AI Skin Analysis",
+    "nav.skinAnalysis": "Zehra AI Skin Analysis",
 
     // Hero
     "hero.subtitle": "Beauty & Aesthetics Studio",
@@ -92,7 +92,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "booking.success.home": "Back to Home",
 
     // Skin Analysis
-    "skin.title": "AI Skin Analysis",
+    "skin.title": "Zehra AI Skin Analysis",
     "skin.subtitle": "Discover your skin type and get personalized recommendations",
     "skin.upload": "Upload a photo of your face",
     "skin.analyze": "Analyze My Skin",
@@ -124,7 +124,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.testimonials": "Témoignages",
     "nav.contact": "Contact",
     "nav.booking": "Réserver",
-    "nav.skinAnalysis": "Analyse de peau IA",
+    "nav.skinAnalysis": "Zehra Analyse de Peau",
 
     "hero.subtitle": "Studio Beauté & Esthétique",
     "hero.title1": "Révélez Votre",
@@ -192,7 +192,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "booking.success.desc": "Merci pour votre réservation. Vous recevrez un email de confirmation sous peu.",
     "booking.success.home": "Retour à l'Accueil",
 
-    "skin.title": "Analyse de Peau IA",
+    "skin.title": "Zehra Analyse de Peau IA",
     "skin.subtitle": "Découvrez votre type de peau et obtenez des recommandations personnalisées",
     "skin.upload": "Téléchargez une photo de votre visage",
     "skin.analyze": "Analyser Ma Peau",
@@ -223,7 +223,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.testimonials": "Getuigenissen",
     "nav.contact": "Contact",
     "nav.booking": "Boek Nu",
-    "nav.skinAnalysis": "AI Huidanalyse",
+    "nav.skinAnalysis": "Zehra AI Huidanalyse",
 
     "hero.subtitle": "Schoonheids- & Esthetiekstudio",
     "hero.title1": "Onthul Jouw",
@@ -291,7 +291,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "booking.success.desc": "Bedankt voor je boeking. Je ontvangt binnenkort een bevestigingsmail.",
     "booking.success.home": "Terug naar Home",
 
-    "skin.title": "AI Huidanalyse",
+    "skin.title": "Zehra AI Huidanalyse",
     "skin.subtitle": "Ontdek je huidtype en krijg gepersonaliseerde aanbevelingen",
     "skin.upload": "Upload een foto van je gezicht",
     "skin.analyze": "Analyseer Mijn Huid",
@@ -322,7 +322,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.testimonials": "آراء العملاء",
     "nav.contact": "اتصل بنا",
     "nav.booking": "احجز الآن",
-    "nav.skinAnalysis": "تحليل البشرة بالذكاء الاصطناعي",
+    "nav.skinAnalysis": "Zehra تحليل البشرة",
 
     "hero.subtitle": "استوديو الجمال والتجميل",
     "hero.title1": "اكشفي عن",
@@ -390,7 +390,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "booking.success.desc": "شكراً لحجزك. ستتلقين رسالة تأكيد عبر البريد الإلكتروني قريباً.",
     "booking.success.home": "العودة للرئيسية",
 
-    "skin.title": "تحليل البشرة بالذكاء الاصطناعي",
+    "skin.title": "Zehra تحليل البشرة بالذكاء الاصطناعي",
     "skin.subtitle": "اكتشفي نوع بشرتك واحصلي على توصيات مخصصة",
     "skin.upload": "ارفعي صورة لوجهك",
     "skin.analyze": "حللي بشرتي",

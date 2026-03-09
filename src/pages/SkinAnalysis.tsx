@@ -76,7 +76,7 @@ export default function SkinAnalysis() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/10 rounded-full mb-4">
             <Sparkles className="w-4 h-4 text-accent" />
-            <span className="font-body text-xs uppercase tracking-wider text-accent">AI Powered</span>
+            <span className="font-body text-xs uppercase tracking-wider text-accent">Zehra AI</span>
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-light text-foreground mb-4">{t("skin.title")}</h1>
           <p className="font-body text-muted-foreground max-w-lg mx-auto">{t("skin.subtitle")}</p>
